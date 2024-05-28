@@ -1,0 +1,57 @@
+FUNCTION_BLOCK Pump
+VAR_INPUT
+	PStart, PStop, PFail : BOOL := FALSE;
+
+END_VAR
+VAR_OUTPUT
+	PRun, PTrip : BOOL := FALSE;
+	ThisObj : POINTER TO Pump := THIS;
+	
+END_VAR
+VAR
+	PFailed : BOOL;
+	Ready : BOOL;
+	LastPStart, LastPStop : BOOL;
+	ElapsedTime : TIME;
+	CycleTime : TIME := T#20MS;
+	TimerStart, TimerStop : BOOL;
+END_VAR
+
+
+####################################################################
+
+
+Ready := NOT PFail AND NOT PRun;
+
+IF PStart THEN
+	Start();
+END_IF
+IF PStop THEN
+	Stop();
+END_IF
+
+IF PFail THEN
+	PTrip := NOT PTrip;
+	PRun := FALSE;
+END_IF
+PFailed := Pfail;
+
+
+
+ElapsedTime := ElapsedTime + CycleTime;
+
+
+
+#####################################################
+
+Start and stop pump:
+
+PRun := TRUE;
+PStop := FALSE;
+
+____________________________________
+
+
+PRun := FALSE;
+PStart := FALSE;
+
