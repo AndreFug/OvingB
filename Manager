@@ -1,0 +1,102 @@
+FUNCTION_BLOCK Manager
+VAR_INPUT
+	FStart, FStop : BOOL := FALSE;
+	MyPump : POINTER TO Pump;
+	NextManager : POINTER TO Manager;
+END_VAR
+	
+VAR_OUTPUT
+	Error : BOOL;
+	ThisManager : POINTER TO Manager := THIS;
+END_VAR
+VAR
+	Tripp, Available : BOOL;
+	ThisObj : POINTER TO Manager;
+	AvailablePumps, RunningPumps, FailedPumps : INT;
+	LastFStart, LastFStop : BOOL;
+
+END_VAR
+
+#################################################################################
+
+
+
+Available := MyPump^.Ready;
+Error := FALSE;
+IF MyPump^.PFail THEN
+    Error := TRUE;
+ELSIF NextManager <> 0 THEN
+    IF NextManager^.Error THEN
+        Error := TRUE;
+    END_IF;
+END_IF;
+
+IF MyPump^.PFail AND NextManager <> 0 THEN
+	IF  NextManager^.MyPump^.Ready THEN
+		StartRequest();
+	END_IF
+END_IF
+
+
+
+IF FStart AND NOT LastFStart THEN
+	StartRequest();
+END_IF
+IF FStop AND NOT LastFStop THEN
+	StopRequest();
+END_IF
+
+LastFStart := FStart;
+LastFStop := FStop;
+
+IF NextManager <> 0 THEN
+	Available := MyPump^.Ready OR NextManager^.Available;
+END_IF	
+
+RunningPumps:= 0;
+FailedPumps := 0;
+AvailablePumps := 0;
+IF MyPump^.PRun THEN
+	RunningPumps := RunningPumps + 1;
+END_IF
+
+IF MyPump^.PFail THEN
+	FailedPumps := FailedPumps + 1;
+END_IF
+
+IF MyPump^.Ready THEN
+	AvailablePumps := AvailablePumps + 1;
+END_IF
+
+IF NextManager <> 0 THEN
+	RunningPumps := RunningPumps + NextManager^.RunningPumps;
+	FailedPumps := FailedPumps + NextManager^.FailedPumps;
+	AvailablePumps := AvailablePumps + NextManager^.AvailablePumps; 
+END_IF
+
+############################################################
+Start and stop request:
+
+IF MyPump^.Ready THEN
+	MyPump^.Start();
+ELSE
+	IF NextManager <> 0 THEN
+		NextManager^.StartRequest();
+	END_IF
+END_IF
+
+________________________________________________
+
+IF MyPump^.PRun THEN
+	MyPump^.Stop();
+ELSE
+	IF NextManager <> 0 THEN
+		NextManager^.StopRequest();
+	END_IF
+END_IF
+
+
+
+
+
+
